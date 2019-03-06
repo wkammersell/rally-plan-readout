@@ -1,8 +1,9 @@
+var app;
+
 Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
 	scopeType: 'release',
     componentCls: 'app',
-	app: null,
     launch: function() {
 		app = this;
 		// Track if this is the first launch so we should auto-load from prefs
@@ -23,8 +24,8 @@ Ext.define('CustomApp', {
 		app._myMask = new Ext.LoadMask(Ext.getBody(), { msg: "Fetching Your Plan ... Please wait." } );
 		app._myMask.show();
 		
-		var scope = app.getContext().getTimeboxScope().getRecord();
-		app.fetchStories( scope );
+		var myScope = app.getContext().getTimeboxScope().getRecord();
+		app.fetchStories( myScope );
 	},
 	
 	//TODO: Get Defects too
@@ -136,9 +137,9 @@ Ext.define('CustomApp', {
 					
 					outStandingLoads--;
 					// See if we're done and can move on to the next loading
-					if( outStandingLoads == 0 ) {
+					if( outStandingLoads === 0 ) {
 						console.log( 'Sub Objective Map');
-						console.log( subObjectiveFeatureMap )
+						console.log( subObjectiveFeatureMap );
 						// TODO Load Features Without Stories
 						// app.fetchFeaturesWithoutStories( scope, featureToSubObjectiveMap );
 						app.fetchFeaturedSubObjectives( scope, subObjectiveFeatureMap );
@@ -204,7 +205,7 @@ Ext.define('CustomApp', {
 					
 					outStandingLoads--;
 					// See if we're done and can move on to the next loading
-					if( outStandingLoads == 0 ) {
+					if( outStandingLoads === 0 ) {
 						console.log( 'Sub Objective Map');
 						console.log( objectiveSubObjectiveMap );
 						// TODO Load Features Without Stories
@@ -264,7 +265,7 @@ Ext.define('CustomApp', {
 					
 					outStandingLoads--;
 					// See if we're done and can move on to the next loading
-					if( outStandingLoads == 0 ) {
+					if( outStandingLoads === 0 ) {
 						console.log( 'Objectives');
 						console.log( objectives );
 						// TODO Load Features Without Stories
