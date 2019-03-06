@@ -268,8 +268,8 @@ Ext.define('CustomApp', {
 					if( outStandingLoads === 0 ) {
 						console.log( 'Objectives');
 						console.log( objectives );
-						// TODO Load Features Without Stories
-						app.displayPlan( objectives );
+						app._myMask.hide();
+						app.displayPlan( objectives, 1 );
 					}
 				}
 			});
@@ -288,9 +288,10 @@ Ext.define('CustomApp', {
 		}
 	},
 	
-	displayPlan:function( objectives ) {
+	displayPlan:function( objectives, objectiveIndex ) {
 		app.clearContent();
-		app._myMask.hide();
+		var objective = objectives[ objectiveIndex ];
+		console.log(objective);
 		
 		var header = app.add( {
 			xtype: 'container',
@@ -314,58 +315,39 @@ Ext.define('CustomApp', {
 				'text-align': 'center'
 			}	
 		});
-	},
-	
-	/*// Load Features that have no Stories
-	fetchFeaturesWithoutStories: function( scope, featureToSubObjectiveMap ) {
-		console.log( 'Fetching Features Without Stories ...' );
-		var filters = [];
-		var releaseFilter = Ext.create('Rally.data.wsapi.Filter', {
-			property : 'Release',
-			operator: '=',
-			value: scope.get('_ref')
-		});
-		filters.push( releaseFilter );
-
-		var store = Ext.create(
-			'Rally.data.wsapi.Store',
-			{
-				model: 'PortfolioItem/Feature',
-				fetch: ['FormattedID','Name','Project','Feature','Release'],
-				context: app.getContext().getDataContext(),
-				//TODO: Do we need to load more than 2000 items?
-				pageSize: 2000,
-				limit: 2000
-			},
-			app
-		);
 		
-		store.addFilter( filters, false );
-		store.loadPage(1, {
-			scope: app,
-			callback: function( records, operation ) {
-				if( operation.wasSuccessful() ) {
-					_.each( records, function( record ) {
-						
-						// TODO: Fetch Dependencies and Risks. See https://raw.githubusercontent.com/wkammersell/keep-or-sweep/master/App.js with Discussion loading for an example
-						
-						if( record.data.Parent ) {
-							if( featureToSubObjectiveMap[ record.data.Parent.FormattedID ] === undefined ) {
-								featureToSubObjectiveMap[ record.data.Parent.FormattedID ] = [];
-							}
-							featureToSubObjectiveMap[ record.data.Feature.FormattedID ].push( record.data );
-						} else {
-							featureToSubObjectiveMap.Unaligned.push( record.data );
-						}
-					}, app );
-					console.log('NEXT!!!');
-				}
-			}
-		});	
-	}*/
-	
-	// Load Sub-Objectives that have no Stories
-	// Load Objectives for the Sub-Objectives
-	// Load Objectives that have no Sub-Objectives
-	// Display the awesomeness
+		var objectiveBody = app.add( {
+			xtype: 'container',
+			border: 0,
+			layout: {
+				type: 'vbox',
+				align: 'stretch'
+			},
+			bodyStyle: {
+				'background-color': '#6f74dd'
+			},
+		});
+		
+		objectiveBody.add( {
+			xtype: 'label',
+			html: "Our first objective is " + objective.FormattedID + " - " + objective.Name,
+			style: {
+				'font-size': '25px',
+				'background-color': '#6f74dd',
+				'color': '#FFFFFF',
+				'text-align': 'center'
+			}	
+		});
+		
+		objectiveBody.add( {
+			xtype: 'label',
+			html: objective.Description,
+			style: {
+				'font-size': '15px',
+				'background-color': '#6f74dd',
+				'color': '#000000',
+				'text-align': 'left'
+			}	
+		});
+	},
 });
