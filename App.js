@@ -312,7 +312,7 @@ Ext.define('CustomApp', {
 				'font-size': '30px',
 				'background-color': '#00227b',
 				'color': '#FFFFFF',
-				'text-align': 'center'
+				'text-align': 'left'
 			}	
 		});
 		
@@ -324,7 +324,7 @@ Ext.define('CustomApp', {
 				align: 'stretch'
 			},
 			bodyStyle: {
-				'background-color': '#6f74dd'
+				'background-color': '#3949ab'
 			},
 		});
 		
@@ -333,9 +333,9 @@ Ext.define('CustomApp', {
 			html: "Our first objective is " + objective.FormattedID + " - " + objective.Name,
 			style: {
 				'font-size': '25px',
-				'background-color': '#6f74dd',
+				'background-color': '#3949ab',
 				'color': '#FFFFFF',
-				'text-align': 'center'
+				'text-align': 'left'
 			}	
 		});
 		
@@ -344,10 +344,59 @@ Ext.define('CustomApp', {
 			html: objective.Description,
 			style: {
 				'font-size': '15px',
-				'background-color': '#6f74dd',
+				'background-color': '#ffffff',
 				'color': '#000000',
 				'text-align': 'left'
 			}	
 		});
+		
+		var subObjectivesBody = app.add( {
+			xtype: 'container',
+			border: 0,
+			layout: {
+				type: 'vbox',
+				align: 'stretch'
+			},
+			bodyStyle: {
+				'background-color': '#6f74dd'
+			},
+			padding: '0 0 0 10'
+		});
+		
+		subObjectivesBody.add( {
+			xtype: 'label',
+			html: "We will achieve this objective by first achieving:",
+			style: {
+				'font-size': '25px',
+				'background-color': '#3949ab',
+				'color': '#FFFFFF',
+				'text-align': 'left'
+			}	
+		});
+		
+		_.each( objective.subObjectives, function( subObjective ) {
+			subObjectivesBody.add( {
+				xtype: 'label',
+				html: subObjective.Name,
+				style: {
+					'font-size': '25px',
+					'background-color': '#6f74dd',
+					'color': '#FFFFFF',
+					'text-align': 'left'
+				}	
+			});
+			
+			subObjectivesBody.add( {
+				xtype: 'label',
+				html: "To achieve this, we will implement:",
+				style: {
+					'font-size': '25px',
+					'background-color': '#6f74dd',
+					'color': '#FFFFFF',
+					'text-align': 'left'
+				}	
+			}); 
+		}, app);
+		
 	},
 });
