@@ -7,11 +7,11 @@ Ext.define('CustomApp', {
 		app = this;
 		// Track if this is the first launch so we should auto-load from prefs
 		app.firstLaunch = true;
-		filterContainer = app.down( 'container' );
+		/*filterContainer = app.down( 'container' );
 		contentContainer = app.add( {
 			xype: 'box',
 			border: 0
-		});
+		});*/
 		//TODO Fetch Portfolio Item Types
 		app.callParent( arguments );
     },
@@ -268,12 +268,51 @@ Ext.define('CustomApp', {
 						console.log( 'Objectives');
 						console.log( objectives );
 						// TODO Load Features Without Stories
-						// app.fetchFeaturesWithoutStories( scope, featureToSubObjectiveMap );
-						//app.fetchSubOjbectivedObjectives( scope, featureToSubObjectiveMap );
+						app.displayPlan( objectives );
 					}
 				}
 			});
 		}, app );
+	},
+	
+	clearContent:function() {
+		while( app.down( 'label' ) ) {
+			app.down( 'label' ).destroy();
+		}
+		while( app.down( 'button' ) ) {
+			app.down( 'button' ).destroy();
+		}
+		while( app.down( 'container' ) ) {
+			app.down( 'container' ).destroy();
+		}
+	},
+	
+	displayPlan:function( objectives ) {
+		app.clearContent();
+		app._myMask.hide();
+		
+		var header = app.add( {
+			xtype: 'container',
+			border: 0,
+			layout: {
+				type: 'vbox',
+				align: 'stretch'
+			},
+			bodyStyle: {
+				'background-color': '#00227b'
+			},
+		});
+		
+		header.add( {
+			xtype: 'label',
+			html: app.getContext().getProject().Name + ' Plan for ' + app.getContext().getTimeboxScope().getRecord().data.Name,
+			style: {
+				'font-size': '30px',
+				'background-color': '#00227b',
+				'color': '#FFFFFF',
+				'text-align': 'center'
+			}	
+		});
 	},
 	
 	/*// Load Features that have no Stories
