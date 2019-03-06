@@ -20,7 +20,7 @@ Ext.define('CustomApp', {
 	onScopeChange: function( scope ) {
 		app.callParent( arguments );
 		// Show loading message
-		app._myMask = new Ext.LoadMask(Ext.getBody(), { msg: "Fetching Your Plan... Please wait." } );
+		app._myMask = new Ext.LoadMask(Ext.getBody(), { msg: "Fetching Your Plan ... Please wait." } );
 		app._myMask.show();
 		
 		var scope = app.getContext().getTimeboxScope().getRecord();
@@ -29,7 +29,7 @@ Ext.define('CustomApp', {
 	
 	//TODO: Get Defects too
 	fetchStories: function( scope ) {
-		console.log( 'Fetching Stories..' );
+		console.log( 'Fetching Stories ...' );
 		var filters = [];
 		var releaseFilter = Ext.create('Rally.data.wsapi.Filter', {
 			property : 'Release',
@@ -52,8 +52,8 @@ Ext.define('CustomApp', {
 		);
 		
 		store.addFilter( filters, false );
-		var storyToFeatureMap = {};
-		storyToFeatureMap.Unaligned = [];
+		var featureStoryMap = {};
+		featureStoryMap.Unaligned = [];
 		store.loadPage(1, {
 			scope: app,
 			callback: function( records, operation ) {
@@ -64,30 +64,32 @@ Ext.define('CustomApp', {
 						
 						// Add story data to the lookup by feature
 						if( record.data.Feature ) {
-							if( storyToFeatureMap[ record.data.Feature.FormattedID ] === undefined ) {
-								storyToFeatureMap[ record.data.Feature.FormattedID ] = [];
+							if( featureStoryMap[ record.data.Feature.FormattedID ] === undefined ) {
+								featureStoryMap[ record.data.Feature.FormattedID ] = [];
 							}
-							storyToFeatureMap[ record.data.Feature.FormattedID ].push( record.data );
+							featureStoryMap[ record.data.Feature.FormattedID ].push( record.data );
 						} else {
-							storyToFeatureMap.Unaligned.push( record.data );
+							featureStoryMap.Unaligned.push( record.data );
 						}
-						
-						console.log( storyToFeatureMap );
 					}, app );
-					app.fetchStoriedFeatures( scope, storyToFeatureMap );
+					console.log('Feature Map');
+					console.log( featureStoryMap );
+					app.fetchStoriedFeatures( scope, featureStoryMap );
 				}
 			}
 		});	
 	},
 	
-	fetchStoriedFeatures: function( scope, storyToFeatureMap ) {
-		console.log( 'Fetching Storied Features...' );
-		var featureToSubObjectiveMap = {};
-		featureToSubObjectiveMap.Unaligned = [];
-		featureToSubObjectiveMap.Unaligned.push( { 'storyToFeatureMap': storyToFeatureMap[ 'Unaligned' ] } );
+	fetchStoriedFeatures: function( scope, featureStoryMap ) {
+		console.log( 'Fetching Storied Features ...' );
+		var subObjectiveFeatureMap = {};
+		subObjectiveFeatureMap.Unaligned = [];
+		subObjectiveFeatureMap.Unaligned.push( { 'Unaligned': featureStoryMap[ 'Unaligned' ] } );
+		var outStandingLoads = 0;
 		
-		_.each( Object.keys( storyToFeatureMap ), function( featureKey ) {
+		_.each( Object.keys( featureStoryMap ), function( featureKey ) {
 			console.log( 'Fetching ' + featureKey + ' ...' );
+			
 			var filters = [];
 			var idFilter = Ext.create('Rally.data.wsapi.Filter', {
 				property : 'FormattedID',
@@ -96,49 +98,232 @@ Ext.define('CustomApp', {
 			});
 			filters.push( idFilter );
 			
+			var dataScope = {
+				workspace: this.getContext().getWorkspaceRef(),
+				project: null
+			};
+			
 			var store = Ext.create(
 				'Rally.data.wsapi.Store',
 				{
 					model: 'PortfolioItem/Feature',
 					fetch: ['FormattedID','Name','Project','Release','Parent'],
-					context: app.getContext().getDataContext(),
+					context: dataScope,
 					pageSize: 2000,
 					limit: 2000
 				},
 				app
 			);
 			store.addFilter( filters, false );
-			console.log( filters );
 			
+			outStandingLoads++;
 			store.loadPage(1, {
 				scope: app,
 				callback: function( records, operation ) {
 					if( operation.wasSuccessful() && records.length > 0 ) {
 						var record = records[ 0 ];
 						console.log( record.data );
-						record.data.storyToFeatureMap = storyToFeatureMap[ record.data.FormattedID ];
+						record.data.stories = featureStoryMap[ record.data.FormattedID ];
 						if( record.data.Parent ) {
-							if( featureToSubObjectiveMap[ record.data.Parent.FormattedID ] === undefined ) {
-								featureToSubObjectiveMap[ record.data.Parent.FormattedID ] = [];
+							if( subObjectiveFeatureMap[ record.data.Parent.FormattedID ] === undefined ) {
+								subObjectiveFeatureMap[ record.data.Parent.FormattedID ] = [];
 							}
-							featureToSubObjectiveMap[ record.data.Parent.FormattedID ].push( record.data );
+							subObjectiveFeatureMap[ record.data.Parent.FormattedID ].push( record.data );
 						} else {
-							featureToSubObjectiveMap.Unaligned.push( record.data );
+							subObjectiveFeatureMap.Unaligned.push( record.data );
 						}
-						
-						// See if we're done and can move on to the next loading
-						if( featureToSubObjectiveMap.length == storyToFeatureMap.length ) {
-							console.log( featureToSubObjectiveMap );
-							console.log( 'NEXT!!!' )
-						}
+					}
+					
+					outStandingLoads--;
+					// See if we're done and can move on to the next loading
+					if( outStandingLoads == 0 ) {
+						console.log( 'Sub Objective Map');
+						console.log( subObjectiveFeatureMap )
+						// TODO Load Features Without Stories
+						// app.fetchFeaturesWithoutStories( scope, featureToSubObjectiveMap );
+						app.fetchFeaturedSubObjectives( scope, subObjectiveFeatureMap );
 					}
 				}
 			});
 		}, app );
-	}
+	},
 	
-	// Load Features that have no Stories
 	// Load Sub-Objectives for the Features
+	fetchFeaturedSubObjectives: function( scope, subObjectiveFeatureMap ) {
+		console.log( 'Fetching Featured Sub Objectives ...' );
+		var objectiveSubObjectiveMap = {};
+		objectiveSubObjectiveMap.Unaligned = [];
+		objectiveSubObjectiveMap.Unaligned.push( { 'Unaligned': subObjectiveFeatureMap[ 'Unaligned' ] } );
+		var outStandingLoads = 0;
+		
+		_.each( Object.keys( subObjectiveFeatureMap ), function( subObjectiveKey ) {
+			console.log( 'Fetching ' + subObjectiveKey + ' ...' );
+			var filters = [];
+			var idFilter = Ext.create('Rally.data.wsapi.Filter', {
+				property : 'FormattedID',
+				operator: '=',
+				value: subObjectiveKey
+			});
+			filters.push( idFilter );
+			
+			var dataScope = {
+				workspace: this.getContext().getWorkspaceRef(),
+				project: null
+			};
+			
+			var store = Ext.create(
+				'Rally.data.wsapi.Store',
+				{
+					model: 'PortfolioItem/Initiative',
+					fetch: ['FormattedID','Name','Project','Parent'],
+					context: dataScope,
+					pageSize: 2000,
+					limit: 2000
+				},
+				app
+			);
+			store.addFilter( filters, false );
+			
+			outStandingLoads++;
+			store.loadPage(1, {
+				scope: app,
+				callback: function( records, operation ) {
+					if( operation.wasSuccessful() && records.length > 0 ) {
+						var record = records[ 0 ];
+						console.log( record.data );
+						record.data.features = subObjectiveFeatureMap[ record.data.FormattedID ];
+						if( record.data.Parent ) {
+							if( objectiveSubObjectiveMap[ record.data.Parent.FormattedID ] === undefined ) {
+								objectiveSubObjectiveMap[ record.data.Parent.FormattedID ] = [];
+							}
+							objectiveSubObjectiveMap[ record.data.Parent.FormattedID ].push( record.data );
+						} else {
+							objectiveSubObjectiveMap.Unaligned.push( record.data );
+						}
+					}
+					
+					outStandingLoads--;
+					// See if we're done and can move on to the next loading
+					if( outStandingLoads == 0 ) {
+						console.log( 'Sub Objective Map');
+						console.log( objectiveSubObjectiveMap );
+						// TODO Load Features Without Stories
+						// app.fetchFeaturesWithoutStories( scope, featureToSubObjectiveMap );
+						app.fetchSubObjectivedObjectives( scope, objectiveSubObjectiveMap );
+					}
+				}
+			});
+		}, app );
+	},
+	
+	// Load Objectives for the Sub-Objectives
+	fetchSubObjectivedObjectives: function( scope, objectiveSubObjectiveMap ) {
+		console.log( 'Fetching Sub Objectived Objectives ...' );
+		var objectives = [];
+		objectives.push( objectiveSubObjectiveMap[ 'Unaligned' ] );
+		var outStandingLoads = 0;
+		
+		_.each( Object.keys( objectiveSubObjectiveMap ), function( objectiveKey ) {
+			console.log( 'Fetching ' + objectiveKey + ' ...' );
+			var filters = [];
+			var idFilter = Ext.create('Rally.data.wsapi.Filter', {
+				property : 'FormattedID',
+				operator: '=',
+				value: objectiveKey
+			});
+			filters.push( idFilter );
+			
+			var dataScope = {
+				workspace: this.getContext().getWorkspaceRef(),
+				project: null
+			};
+			
+			var store = Ext.create(
+				'Rally.data.wsapi.Store',
+				{
+					model: 'PortfolioItem/Theme',
+					fetch: ['FormattedID','Name','Project'],
+					context: dataScope,
+					pageSize: 2000,
+					limit: 2000
+				},
+				app
+			);
+			store.addFilter( filters, false );
+			
+			outStandingLoads++;
+			store.loadPage(1, {
+				scope: app,
+				callback: function( records, operation ) {
+					if( operation.wasSuccessful() && records.length > 0 ) {
+						var record = records[ 0 ];
+						console.log( record.data );
+						record.data.subObjectives = objectiveSubObjectiveMap[ record.data.FormattedID ];
+						objectives.push( record.data );
+					}
+					
+					outStandingLoads--;
+					// See if we're done and can move on to the next loading
+					if( outStandingLoads == 0 ) {
+						console.log( 'Objectives');
+						console.log( objectives );
+						// TODO Load Features Without Stories
+						// app.fetchFeaturesWithoutStories( scope, featureToSubObjectiveMap );
+						//app.fetchSubOjbectivedObjectives( scope, featureToSubObjectiveMap );
+					}
+				}
+			});
+		}, app );
+	},
+	
+	/*// Load Features that have no Stories
+	fetchFeaturesWithoutStories: function( scope, featureToSubObjectiveMap ) {
+		console.log( 'Fetching Features Without Stories ...' );
+		var filters = [];
+		var releaseFilter = Ext.create('Rally.data.wsapi.Filter', {
+			property : 'Release',
+			operator: '=',
+			value: scope.get('_ref')
+		});
+		filters.push( releaseFilter );
+
+		var store = Ext.create(
+			'Rally.data.wsapi.Store',
+			{
+				model: 'PortfolioItem/Feature',
+				fetch: ['FormattedID','Name','Project','Feature','Release'],
+				context: app.getContext().getDataContext(),
+				//TODO: Do we need to load more than 2000 items?
+				pageSize: 2000,
+				limit: 2000
+			},
+			app
+		);
+		
+		store.addFilter( filters, false );
+		store.loadPage(1, {
+			scope: app,
+			callback: function( records, operation ) {
+				if( operation.wasSuccessful() ) {
+					_.each( records, function( record ) {
+						
+						// TODO: Fetch Dependencies and Risks. See https://raw.githubusercontent.com/wkammersell/keep-or-sweep/master/App.js with Discussion loading for an example
+						
+						if( record.data.Parent ) {
+							if( featureToSubObjectiveMap[ record.data.Parent.FormattedID ] === undefined ) {
+								featureToSubObjectiveMap[ record.data.Parent.FormattedID ] = [];
+							}
+							featureToSubObjectiveMap[ record.data.Feature.FormattedID ].push( record.data );
+						} else {
+							featureToSubObjectiveMap.Unaligned.push( record.data );
+						}
+					}, app );
+					console.log('NEXT!!!');
+				}
+			}
+		});	
+	}*/
+	
 	// Load Sub-Objectives that have no Stories
 	// Load Objectives for the Sub-Objectives
 	// Load Objectives that have no Sub-Objectives
