@@ -243,7 +243,7 @@ Ext.define('CustomApp', {
 				'Rally.data.wsapi.Store',
 				{
 					model: 'PortfolioItem/Theme',
-					fetch: ['FormattedID','Name','Project'],
+					fetch: ['FormattedID','Name','Project', 'Description'],
 					context: dataScope,
 					pageSize: 2000,
 					limit: 2000
