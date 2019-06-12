@@ -36,11 +36,15 @@ Ext.define('CustomApp', {
 			'Rally.data.wsapi.Store',
 			{
 				model: 'UserStory',
-				fetch: ['FormattedID','Name','Project','PortfolioItem'],
+				fetch: ['FormattedID','Name','Project','PortfolioItem','DisplayColor','Description'],
 				context: app.getContext().getDataContext(),
 				//TODO: Do we need to load more than 2000 items?
 				pageSize: 2000,
-				limit: 2000
+				limit: 2000,
+				sorters: [{
+					property: 'rank',
+				    direction: 'DESC'
+				}]
 			},
 			app
 		);
@@ -128,7 +132,13 @@ Ext.define('CustomApp', {
 				callback: function( records, operation ) {
 					if( operation.wasSuccessful() && records.length > 0 ) {
 						var record = records[ 0 ];
-						currentMap[ record.data.FormattedID ] = Object.assign( currentMap[ record.data.FormattedID ], record.data );
+						
+						currentMap[ record.data.FormattedID ].Name = record.data.Name;
+						currentMap[ record.data.FormattedID ].Project = record.data.Project;
+						currentMap[ record.data.FormattedID ].Parent = record.data.Parent;
+						currentMap[ record.data.FormattedID ].Description = record.data.Description;
+						currentMap[ record.data.FormattedID ].DisplayColor = record.data.DisplayColor;
+						
 						if( record.data.Parent ) {
 							var parentID = record.data.Parent.FormattedID;
 							if( parentMap[ parentID ] === undefined ) {
@@ -200,9 +210,10 @@ Ext.define('CustomApp', {
 				'text-align': 'left'
 			}	
 		});
-		
-		var grayScaleColor = ( index + 1 ) * Math.floor( 7 / planMaps.length );
-		var bgColor = '#' + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor;
+	
+		// TODO: Do we want to gradiate the background black?	
+	//	var grayScaleColor = ( index + 1 ) * Math.floor( 7 / planMaps.length );
+	//	var bgColor = '#' + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor;
 		var model = planItem._type;
 		if ( model.indexOf( '/' ) >= 0 ) {
 			model = model.slice( model.indexOf( '/' ) + 1 );
@@ -216,7 +227,7 @@ Ext.define('CustomApp', {
 				align: 'stretch'
 			},
 			bodyStyle: {
-				'background-color': bgColor
+				'background-color': '#000000'
 			}
 		});
 		
@@ -255,11 +266,11 @@ Ext.define('CustomApp', {
 		itemTitleContainer.add( {
 			xtype: 'label',
 			flex: 1,
-			html: "Our " + model + " is " + planItem.FormattedID + " - " + planItem.Name,
+			html: "Our " + model + " (" + planItem.FormattedID + ") " + planItem.Name,
 			padding: "0 0 0 10",
 			style: {
 				'font-size': '25px',
-				'background-color': bgColor,
+				'background-color': '#000000',
 				'color': '#FFFFFF',
 				'text-align': 'left'
 			}	
@@ -273,7 +284,7 @@ Ext.define('CustomApp', {
 			padding: "0 20 0 0",
 			style: {
 				'font-size': '25px',
-				'background-color': bgColor,
+				'background-color': '#000000',
 				'color': '#FFFFFF',
 				'text-align': 'right'
 			}	
@@ -293,17 +304,106 @@ Ext.define('CustomApp', {
 			autoScroll: true
 		});
 		
-		itemContentContainer.add( {
+		app.displayChildren( planItem, planMaps, 1, itemContentContainer );
+	},
+	
+	displayChildren:function( parent, planMaps, childDepth, container ) {	
+		container.add( {
 			xtype: 'label',
-			html: "To achieve this we will:",
+			html: "To achieve this, we are planning:",
+			padding: "0 0 0 10",
 			flex: 1,
 			style: {
 				'font-size': '25px',
-				'background-color': bgColor,
+				'background-color': '#000000',
 				'color': '#FFFFFF',
 				'text-align': 'left'
 			}	
 		});
+		
+		var children = planMaps[ childDepth ][ parent.FormattedID ].Children;
+		_.each( children, function( child ) {
+			var childContainer = container.add( {
+				xtype: 'container',
+				border: 0,
+				layout: {
+					type: 'hbox',
+					align: 'stretch'
+				},
+				bodyStyle: {
+					'background-color': '#000000'
+				}
+			});
+		
+			childContainer.add( {
+				xtype: 'label',
+				flex: 0,
+				html: "___",
+				style: {
+					'font-size': '25px',
+					'background-color': child.DisplayColor,
+					'color': child.DisplayColor,
+					'text-align': 'left'
+				}	
+			});
+			
+			var childContentContainer = childContainer.add( {
+				xtype: 'container',
+				flex: 1,
+				border: 0,
+				layout: {
+					type: 'vbox',
+					align: 'stretch'
+				}
+			});
+		
+			var childTitleContainer = childContentContainer.add( {
+				xtype: 'container',
+				flex: 1,
+				border: 0,
+				layout: {
+					type: 'hbox',
+					align: 'stretch'
+				}
+			});
+			
+			var model = child._type;
+			if ( model.indexOf( '/' ) >= 0 ) {
+				model = model.slice( model.indexOf( '/' ) + 1 );
+			}
+		
+			childTitleContainer.add( {
+				xtype: 'label',
+				flex: 1,
+				html: "Our " + model + " (" + child.FormattedID + ") " + child.Name,
+				padding: "0 0 0 10",
+				style: {
+					'font-size': '25px',
+					'background-color': '#000000',
+					'color': '#FFFFFF',
+					'text-align': 'left'
+				}	
+			});	
+		
+			childContentContainer.add( {
+				xtype: 'label',
+				html: child.Description,
+				padding: "0 0 0 10",
+				style: {
+					'font-size': '15px',
+					'background-color': '#ffffff',
+					'color': '#000000',
+					'text-align': 'left'
+				},
+				height: '200px',
+				autoScroll: true
+			});
+			
+			if ( childDepth < ( planMaps.length - 1 ) ) {
+				app.displayChildren( child, planMaps, childDepth + 1, childContentContainer );
+			}			
+		}, app );
+	}
 		
 /*		_.each( objective.subObjectives, function( subObjective ) {
 			subObjectivesBody.add( {
@@ -379,7 +479,7 @@ Ext.define('CustomApp', {
 					autoScroll: true	
 				}); 
 			}, app);
-		}, app); */
+		}, app); 
 		
-	},
+	},*/
 });
