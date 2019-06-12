@@ -76,7 +76,7 @@ Ext.define('CustomApp', {
 						console.log( planMaps);
 						app.fetchPlanParent( scope, planMaps );
 					} else {
-			//			app.DisplayPlan( planMaps );
+						app.displayPlan( planMaps, 0 );
 					}
 				}
 			}
@@ -113,7 +113,7 @@ Ext.define('CustomApp', {
 				'Rally.data.wsapi.Store',
 				{
 					model: model,
-					fetch: ['FormattedID','Name','Project','Parent','Description'],
+					fetch: ['FormattedID','Name','Project','Parent','Description','DisplayColor'],
 					context: dataScope,
 					pageSize: 2000,
 					limit: 2000
@@ -151,7 +151,7 @@ Ext.define('CustomApp', {
 							parentMap[ UNALIGNED + model ]._type = parentModel;
 							app.fetchPlanParent( scope, planMaps );
 						} else {
-				//			app.DisplayPlan( planMaps );							
+							app.displayPlan( planMaps, 0 );							
 						}
 					}
 				}
@@ -171,10 +171,11 @@ Ext.define('CustomApp', {
 		}
 	},
 	
-	displayPlan:function( objectives, objectiveIndex ) {
+	displayPlan:function( planMaps, index ) {
+		app._myMask.hide();
 		app.clearContent();
-		var objective = objectives[ objectiveIndex ];
-		console.log(objective);
+		var planItem = planMaps[ 0 ][ Object.keys( planMaps[ 0 ] )[ 0 ] ][ index ];
+		console.log(planItem);
 		
 		var header = app.add( {
 			xtype: 'container',
@@ -184,82 +185,127 @@ Ext.define('CustomApp', {
 				align: 'stretch'
 			},
 			bodyStyle: {
-				'background-color': '#00227b'
+				'background-color': '#000000'
 			},
 		});
 		
 		header.add( {
 			xtype: 'label',
 			html: app.getContext().getProject().Name + ' Plan for ' + app.getContext().getTimeboxScope().getRecord().data.Name,
+			padding: "0 0 0 10",
 			style: {
 				'font-size': '30px',
-				'background-color': '#00227b',
+				'background-color': '#000000',
 				'color': '#FFFFFF',
 				'text-align': 'left'
 			}	
 		});
 		
-		var objectiveBody = app.add( {
+		var grayScaleColor = ( index + 1 ) * Math.floor( 7 / planMaps.length );
+		var bgColor = '#' + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor;
+		var model = planItem._type;
+		if ( model.indexOf( '/' ) >= 0 ) {
+			model = model.slice( model.indexOf( '/' ) + 1 );
+		}
+		
+		var itemContainer = app.add( {
 			xtype: 'container',
+			border: 0,
+			layout: {
+				type: 'hbox',
+				align: 'stretch'
+			},
+			bodyStyle: {
+				'background-color': bgColor
+			}
+		});
+		
+		itemContainer.add( {
+			xtype: 'label',
+			flex: 0,
+			html: "___",
+			style: {
+				'font-size': '25px',
+				'background-color': planItem.DisplayColor,
+				'color': planItem.DisplayColor,
+				'text-align': 'left'
+			}	
+		});
+		
+		var itemContentContainer = itemContainer.add( {
+			xtype: 'container',
+			flex: 1,
 			border: 0,
 			layout: {
 				type: 'vbox',
 				align: 'stretch'
-			},
-			bodyStyle: {
-				'background-color': '#3949ab'
-			},
+			}
 		});
 		
-		objectiveBody.add( {
+		var itemTitleContainer = itemContentContainer.add( {
+			xtype: 'container',
+			flex: 1,
+			border: 0,
+			layout: {
+				type: 'hbox',
+				align: 'stretch'
+			}
+		});
+		
+		itemTitleContainer.add( {
 			xtype: 'label',
-			html: "Our first objective is " + objective.FormattedID + " - " + objective.Name,
+			flex: 1,
+			html: "Our " + model + " is " + planItem.FormattedID + " - " + planItem.Name,
+			padding: "0 0 0 10",
 			style: {
 				'font-size': '25px',
-				'background-color': '#3949ab',
+				'background-color': bgColor,
 				'color': '#FFFFFF',
 				'text-align': 'left'
 			}	
 		});
 		
-		objectiveBody.add( {
+		//TODO: Factor in Unaligned items
+		itemTitleContainer.add( {
 			xtype: 'label',
-			html: objective.Description,
+			flex: 1,
+			html: " ( " + ( index + 1 ) + " of " + ( planMaps[ 0 ][ Object.keys( planMaps[ 0 ] )[ 0 ] ].length ) + ")",
+			padding: "0 20 0 0",
+			style: {
+				'font-size': '25px',
+				'background-color': bgColor,
+				'color': '#FFFFFF',
+				'text-align': 'right'
+			}	
+		});		
+		
+		itemContentContainer.add( {
+			xtype: 'label',
+			html: planItem.Description,
+			padding: "0 0 0 10",
 			style: {
 				'font-size': '15px',
 				'background-color': '#ffffff',
 				'color': '#000000',
 				'text-align': 'left'
 			},
-			height: '100px',
+			height: '200px',
 			autoScroll: true
 		});
 		
-		var subObjectivesBody = app.add( {
-			xtype: 'container',
-			border: 0,
-			layout: {
-				type: 'vbox',
-				align: 'stretch'
-			},
-			bodyStyle: {
-				'background-color': '#6f74dd'
-			},
-			padding: '0 0 0 10'
-		});
-		
-		subObjectivesBody.add( {
+		itemContentContainer.add( {
 			xtype: 'label',
-			html: "The short-term goals to achieve this objective are:",
+			html: "To achieve this we will:",
+			flex: 1,
 			style: {
 				'font-size': '25px',
-				'background-color': '#3949ab',
+				'background-color': bgColor,
 				'color': '#FFFFFF',
 				'text-align': 'left'
 			}	
 		});
 		
-		_.each( objective.subObjectives, function( subObjective ) {
+/*		_.each( objective.subObjectives, function( subObjective ) {
 			subObjectivesBody.add( {
 				xtype: 'label',
 				html: subObjective.FormattedID + ' - ' + subObjective.Name,
@@ -333,7 +379,7 @@ Ext.define('CustomApp', {
 					autoScroll: true	
 				}); 
 			}, app);
-		}, app);
+		}, app); */
 		
 	},
 });
