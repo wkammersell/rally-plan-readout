@@ -89,7 +89,7 @@ Ext.define('CustomApp', {
 						console.log( planMaps);
 						app.fetchPlanParent( scope, planMaps );
 					} else {
-						app.displayPlan( planMaps, 0 );
+						app.displayPlan( planMaps );
 					}
 				}
 			}
@@ -170,7 +170,7 @@ Ext.define('CustomApp', {
 							parentMap[ UNALIGNED + model ]._type = parentModel;
 							app.fetchPlanParent( scope, planMaps );
 						} else {
-							app.displayPlan( planMaps, 0 );							
+							app.displayPlan( planMaps );							
 						}
 					}
 				}
@@ -190,11 +190,9 @@ Ext.define('CustomApp', {
 		}
 	},
 	
-	displayPlan:function( planMaps, index ) {
+	displayPlan:function( planMaps ) {
 		app._myMask.hide();
 		app.clearContent();
-		var planItem = planMaps[ 0 ][ Object.keys( planMaps[ 0 ] )[ 0 ] ][ index ];
-		console.log(planItem);
 		
 		var header = app.add( {
 			xtype: 'container',
@@ -219,101 +217,86 @@ Ext.define('CustomApp', {
 				'text-align': 'left'
 			}	
 		});
-	
-		// TODO: Do we want to gradiate the background black?	
-	//	var grayScaleColor = ( index + 1 ) * Math.floor( 7 / planMaps.length );
-	//	var bgColor = '#' + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor + grayScaleColor;
-		var model = planItem._type;
-		if ( model.indexOf( '/' ) >= 0 ) {
-			model = model.slice( model.indexOf( '/' ) + 1 );
-		}
 		
-		var itemContainer = app.add( {
-			xtype: 'container',
-			border: 0,
-			layout: {
-				type: 'hbox',
-				align: 'stretch'
-			},
-			bodyStyle: {
-				'background-color': '#000000'
+		_.each( planMaps[ 0 ][ Object.keys( planMaps[ 0 ] )[ 0 ] ], function( planItem ) {
+			var model = planItem._type;
+			if ( model.indexOf( '/' ) >= 0 ) {
+				model = model.slice( model.indexOf( '/' ) + 1 );
 			}
-		});
 		
-		itemContainer.add( {
-			xtype: 'label',
-			flex: 0,
-			html: "___",
-			style: {
-				'font-size': '25px',
-				'background-color': planItem.DisplayColor,
-				'color': planItem.DisplayColor,
-				'text-align': 'left'
-			}	
-		});
+			var itemContainer = app.add( {
+				xtype: 'container',
+				border: 0,
+				layout: {
+					type: 'hbox',
+					align: 'stretch'
+				},
+				bodyStyle: {
+					'background-color': '#000000'
+				}
+			});
 		
-		var itemContentContainer = itemContainer.add( {
-			xtype: 'container',
-			flex: 1,
-			border: 0,
-			layout: {
-				type: 'vbox',
-				align: 'stretch'
-			}
-		});
+			itemContainer.add( {
+				xtype: 'label',
+				flex: 0,
+				html: "___",
+				style: {
+					'font-size': '25px',
+					'background-color': planItem.DisplayColor,
+					'color': planItem.DisplayColor,
+					'text-align': 'left'
+				}	
+			});
 		
-		var itemTitleContainer = itemContentContainer.add( {
-			xtype: 'container',
-			flex: 1,
-			border: 0,
-			layout: {
-				type: 'hbox',
-				align: 'stretch'
-			}
-		});
+			var itemContentContainer = itemContainer.add( {
+				xtype: 'container',
+				flex: 1,
+				border: 0,
+				layout: {
+					type: 'vbox',
+					align: 'stretch'
+				}
+			});
 		
-		itemTitleContainer.add( {
-			xtype: 'label',
-			flex: 1,
-			html: "Our " + model + " (" + planItem.FormattedID + ") " + planItem.Name,
-			padding: "0 0 0 10",
-			style: {
-				'font-size': '25px',
-				'background-color': '#000000',
-				'color': '#FFFFFF',
-				'text-align': 'left'
-			}	
-		});
+			var itemTitleContainer = itemContentContainer.add( {
+				xtype: 'container',
+				flex: 1,
+				border: 0,
+				layout: {
+					type: 'hbox',
+					align: 'stretch'
+				}
+			});
 		
-		//TODO: Factor in Unaligned items
-		itemTitleContainer.add( {
-			xtype: 'label',
-			flex: 1,
-			html: " ( " + ( index + 1 ) + " of " + ( planMaps[ 0 ][ Object.keys( planMaps[ 0 ] )[ 0 ] ].length ) + ")",
-			padding: "0 20 0 0",
-			style: {
-				'font-size': '25px',
-				'background-color': '#000000',
-				'color': '#FFFFFF',
-				'text-align': 'right'
-			}	
-		});		
+			itemTitleContainer.add( {
+				xtype: 'label',
+				flex: 1,
+				html: "Our " + model + " (" + planItem.FormattedID + ") " + planItem.Name,
+				padding: "0 0 0 10",
+				style: {
+					'font-size': '25px',
+					'background-color': '#000000',
+					'color': '#FFFFFF',
+					'text-align': 'left'
+				}	
+			});	
 		
-		itemContentContainer.add( {
-			xtype: 'label',
-			html: planItem.Description,
-			padding: "0 0 0 10",
-			style: {
-				'font-size': '15px',
-				'background-color': '#ffffff',
-				'color': '#000000',
-				'text-align': 'left'
-			},
-			height: '200px',
-			autoScroll: true
-		});
+			itemContentContainer.add( {
+				xtype: 'label',
+				html: planItem.Description,
+				padding: "0 0 0 10",
+				style: {
+					'font-size': '15px',
+					'background-color': '#ffffff',
+					'color': '#000000',
+					'text-align': 'left'
+				},
+				height: '200px',
+				autoScroll: true
+			});
 		
-		app.displayChildren( planItem, planMaps, 1, itemContentContainer );
+			app.displayChildren( planItem, planMaps, 1, itemContentContainer );
+		}, app );
 	},
 	
 	displayChildren:function( parent, planMaps, childDepth, container ) {	
@@ -413,84 +396,6 @@ Ext.define('CustomApp', {
 			}			
 		}, app );
 	}
-		
-/*		_.each( objective.subObjectives, function( subObjective ) {
-			subObjectivesBody.add( {
-				xtype: 'label',
-				html: subObjective.FormattedID + ' - ' + subObjective.Name,
-				style: {
-					'font-size': '25px',
-					'background-color': '#6f74dd',
-					'color': '#FFFFFF',
-					'text-align': 'left'
-				}	
-			});
-			
-			subObjectivesBody.add( {
-				xtype: 'label',
-				html: subObjective.Description,
-				style: {
-					'font-size': '15px',
-					'background-color': '#ffffff',
-					'color': '#000000',
-					'text-align': 'left'
-				},
-				height: '100px',
-				autoScroll: true
-			});
-			
-			var featuresContainer = subObjectivesBody.add( {
-				xtype: 'container',
-				border: 0,
-				layout: {
-					type: 'vbox',
-					align: 'stretch'
-				},
-				bodyStyle: {
-					'background-color': '#aaaaaa'
-				},
-				padding: '0 0 0 10'
-			});
-			
-			featuresContainer.add( {
-				xtype: 'label',
-				html: "To achieve this goal, we will implement:",
-				style: {
-					'font-size': '25px',
-					'background-color': '#aaaaaa',
-					'color': '#000000',
-					'text-align': 'left'
-				}	
-			}); 
-			
-			_.each( subObjective.features, function( feature ) {
-				featuresContainer.add( {
-					xtype: 'label',
-					html: feature.FormattedID + ' - ' + feature.Name,
-					style: {
-						'font-size': '25px',
-						'background-color': '#6f74dd',
-						'color': '#FFFFFF',
-						'text-align': 'left'
-					}	
-				});
-			
-				featuresContainer.add( {
-					xtype: 'label',
-					html: feature.Description,
-					style: {
-						'font-size': '15px',
-						'background-color': '#ffffff',
-						'color': '#000000',
-						'text-align': 'left'
-					},
-					height: '100px',
-					autoScroll: true	
-				}); 
-			}, app);
-		}, app); 
-		
-	},*/
 });
 
             Rally.launchApp('CustomApp', {
