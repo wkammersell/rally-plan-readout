@@ -350,6 +350,28 @@ Ext.define('CustomApp', {
 				}
 			});
 			
+			var childDetailsContainer = childContentContainer.add( {
+				xtype: 'container',
+				flex: 1,
+				border: 0,
+				layout: {
+					type: 'vbox',
+					align: 'stretch'
+				}
+			});
+			
+			var visibleButton = childTitleContainer.add( {
+				xtype: 'rallybutton',
+				text: '▶',
+				margin: "0 0 0 0",
+				handler: function(){ childDetailsContainer.setVisible( !childDetailsContainer.isVisible() ); childDetailsContainer.isVisible() ? visibleButton.setText('▼') : visibleButton.setText('▶'); },
+				style: {
+					'background-color': '#000000',
+					'border-color': '#000000',
+					'color': '#FFFFFF'
+				}
+			} );
+			
 			var model = child._type;
 			if ( model.indexOf( '/' ) >= 0 ) {
 				model = model.slice( model.indexOf( '/' ) + 1 );
@@ -368,7 +390,7 @@ Ext.define('CustomApp', {
 				}	
 			});	
 		
-			childContentContainer.add( {
+			childDetailsContainer.add( {
 				xtype: 'label',
 				html: child.Description,
 				padding: "0 0 0 10",
@@ -383,8 +405,9 @@ Ext.define('CustomApp', {
 			});
 			
 			if ( childDepth < ( planMaps.length - 1 ) ) {
-				app.displayChildren( child, planMaps, childDepth + 1, childContentContainer );
-			}			
+				app.displayChildren( child, planMaps, childDepth + 1, childDetailsContainer );
+			}
+			childDetailsContainer.setVisible(false);	
 		}, app );
 	}
 });
